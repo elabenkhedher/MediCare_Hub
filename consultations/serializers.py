@@ -1,0 +1,27 @@
+from rest_framework import serializers
+from .models import Consultation
+
+MAX_CONSULTATIONS_VISIBLES = 10
+
+class ConsultationSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Consultation
+        fields = '__all__'
+        read_only_fields = ['id', 'created_at', 'is_archived']
+
+    def create(self, validated_data):
+        consultation = super().create(validated_data)
+
+        # Archivage automatique des anciennes consultations
+        consultations = Consultation.objects.filter(
+            patient=consultation.patient,
+            medecin=consultation.medecin,
+            is_archived=False
+        ).order_by('-created_at')
+
+        for c in consultations[MAX_CONSULTATIONS_VISIBLES:]:
+            c.is_archived = True
+            c.save()
+
+        return consultation
