@@ -8,3 +8,7 @@ class IsSecretaire(permissions.BasePermission):
 class IsMedecin(permissions.BasePermission):
     def has_permission(self, request, view):
         return request.user.is_authenticated and request.user.role == 'medecin'
+
+class IsPatient(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role == 'patient'
