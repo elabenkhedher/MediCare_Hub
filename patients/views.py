@@ -88,3 +88,18 @@ class MyDossierMedicalView(generics.RetrieveUpdateAPIView):
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
         return Response(serializer.data)
+
+
+class AddDocumentView(generics.CreateAPIView):
+    """Endpoint pour que le patient connecté puisse ajouter un document à son dossier"""
+    serializer_class = DocumentMedicalSerializer
+    permission_classes = [IsAuthenticated, IsPatient]
+
+    def perform_create(self, serializer):
+        # Trouver le patient lié à l'utilisateur connecté
+        patient = Patient.objects.filter(nom=self.request.user.username).first()
+        if not patient:
+            from django.http import Http404
+            raise Http404("Patient non trouvé")
+        dossier = patient.dossier
+        serializer.save(dossier_medical=dossier)
