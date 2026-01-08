@@ -82,6 +82,7 @@ SIMPLE_JWT = {
     'AUTH_HEADER_TYPES': ('Bearer',),
     'UPDATE_LAST_LOGIN': True,
     'TOKEN_OBTAIN_SERIALIZER': 'accounts.claim_serializers.CustomTokenObtainPairSerializer',
+    'TOKEN_EDITOR_CLASS': 'accounts.claim_serializers.CustomAccessToken',
 }
 ROOT_URLCONF = 'MediCareHub.urls'
 

@@ -26,8 +26,10 @@ class UserRegisterView(generics.CreateAPIView):
 
         # Créer un Patient automatiquement si le rôle est "patient"
         if user.role == 'patient':
+            from patients.models import Patient, DossierMedical
             patient = Patient.objects.create(
-                nom=user.username,  # Utiliser le username comme nom par défaut
+                user=user,
+                nom=user.username,
                 prenom="",
                 email=user.email or "",
             )

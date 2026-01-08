@@ -53,6 +53,18 @@ class DocumentMedicalViewSet(viewsets.ModelViewSet):
     serializer_class = DocumentMedicalSerializer
     permission_classes = [IsAuthenticated, IsSecretaire]
 
+    def destroy(self, request, *args, **kwargs):
+        # Allow patients to delete their own documents
+        if request.user.role == 'patient':
+            instance = self.get_object()
+            # Check if the document belongs to the patient's dossier
+            patient = Patient.objects.filter(nom=request.user.username).first()
+            if patient and instance.dossier_medical.patient == patient:
+                instance.delete()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            return Response({"detail": "Vous n'avez pas la permission de supprimer ce document"}, status=status.HTTP_403_FORBIDDEN)
+        return super().destroy(request, *args, **kwargs)
+
 
 class PatientRegisterView(generics.CreateAPIView):
     serializer_class = PatientRegisterSerializer
@@ -80,14 +92,18 @@ class MyPatientProfileView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         # Trouver le patient lié à l'utilisateur connecté
-        patient = Patient.objects.filter(nom=self.request.user.username).first()
+        patient = Patient.objects.filter(user=self.request.user).first()
         if not patient:
-            # Si pas trouvé par nom, créer un patient pour cet utilisateur
-            patient = Patient.objects.create(
-                nom=self.request.user.username,
-                email=self.request.user.email or "",
-            )
-            DossierMedical.objects.create(patient=patient)
+            # Si pas trouvé par user, chercher par nom d'utilisateur
+            patient = Patient.objects.filter(nom=self.request.user.username).first()
+            if not patient:
+                # Si toujours pas trouvé, créer un patient pour cet utilisateur
+                patient = Patient.objects.create(
+                    user=self.request.user,
+                    nom=self.request.user.username,
+                    email=self.request.user.email or "",
+                )
+                DossierMedical.objects.create(patient=patient)
         return patient
 
 
@@ -98,7 +114,10 @@ class MyDossierMedicalView(generics.RetrieveUpdateAPIView):
 
     def get_object(self):
         # Trouver le patient lié à l'utilisateur connecté
-        patient = Patient.objects.filter(nom=self.request.user.username).first()
+        patient = Patient.objects.filter(user=self.request.user).first()
+        if not patient:
+            # Si pas trouvé par user, chercher par nom d'utilisateur
+            patient = Patient.objects.filter(nom=self.request.user.username).first()
         if not patient:
             # Ne pas créer automatiquement - retourner 404
             from django.http import Http404
@@ -121,7 +140,10 @@ class AddDocumentView(generics.CreateAPIView):
 
     def perform_create(self, serializer):
         # Trouver le patient lié à l'utilisateur connecté
-        patient = Patient.objects.filter(nom=self.request.user.username).first()
+        patient = Patient.objects.filter(user=self.request.user).first()
+        if not patient:
+            # Si pas trouvé par user, chercher par nom d'utilisateur
+            patient = Patient.objects.filter(nom=self.request.user.username).first()
         if not patient:
             from django.http import Http404
             raise Http404("Patient non trouvé")

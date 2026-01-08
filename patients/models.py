@@ -1,6 +1,8 @@
 # patients/models.py
 from django.db import models
 from django.utils import timezone
+from django.conf import settings
+
 
 class Patient(models.Model):
     SEXE_CHOICES = [
@@ -9,6 +11,7 @@ class Patient(models.Model):
         ('A', 'Autre'),
     ]
 
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, null=True, blank=True, related_name='patient')
     nom = models.CharField(max_length=100)
     prenom = models.CharField(max_length=100)
     date_naissance = models.DateField(null=True, blank=True)

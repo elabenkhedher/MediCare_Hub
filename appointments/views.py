@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from rest_framework.decorators import action
 from .models import RendezVous
 from .serializers import RendezVousSerializer
 
@@ -55,3 +56,19 @@ class RendezVousViewSet(viewsets.ModelViewSet):
                 {'non_field_errors': [str(e)]},
                 status=status.HTTP_400_BAD_REQUEST
             )
+
+    @action(detail=False, methods=['get'])
+    def by_doctor_date(self, request):
+        """Get appointments for a specific doctor on a specific date"""
+        medecin_id = request.query_params.get('medecin_id')
+        date = request.query_params.get('date')
+        
+        if not medecin_id or not date:
+            return Response({'error': 'medecin_id and date are required'}, status=400)
+        
+        appointments = RendezVous.objects.filter(
+            medecin_id=medecin_id,
+            date=date
+        ).values('heure_debut', 'heure_fin')
+        
+        return Response(list(appointments))
