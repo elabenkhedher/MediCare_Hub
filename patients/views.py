@@ -22,11 +22,24 @@ class MedecinListView(generics.ListAPIView):
 class PatientViewSet(viewsets.ModelViewSet):
     queryset = Patient.objects.all()
     serializer_class = PatientSerializer
-    permission_classes = [IsAuthenticated, IsSecretaire]
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Allow both secretaire and medecin to access patient list
+        user = self.request.user
+        if user.is_authenticated and user.role in ['secretaire', 'medecin']:
+            return Patient.objects.all()
+        return Patient.objects.none()
 
     def perform_create(self, serializer):
         patient = serializer.save()
         DossierMedical.objects.create(patient=patient)
+
+    def create(self, request, *args, **kwargs):
+        # Custom create to handle permission check
+        if request.user.is_authenticated and request.user.role in ['secretaire', 'medecin']:
+            return super().create(request, *args, **kwargs)
+        return Response({"detail": "Permission denied"}, status=status.HTTP_403_FORBIDDEN)
 
 
 class DossierMedicalViewSet(viewsets.ModelViewSet):

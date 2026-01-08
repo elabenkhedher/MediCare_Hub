@@ -81,6 +81,7 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
     'AUTH_HEADER_TYPES': ('Bearer',),
     'UPDATE_LAST_LOGIN': True,
+    'TOKEN_OBTAIN_SERIALIZER': 'accounts.claim_serializers.CustomTokenObtainPairSerializer',
 }
 ROOT_URLCONF = 'MediCareHub.urls'
 
