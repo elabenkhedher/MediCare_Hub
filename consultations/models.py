@@ -6,10 +6,14 @@ from appointments.models import RendezVous
 class Consultation(models.Model):
 
     patient = models.ForeignKey(
-        Patient,
-        on_delete=models.CASCADE,
-        related_name='consultations'
-    )
+    Patient,
+    on_delete=models.CASCADE,
+    related_name='consultations',
+    null=True,
+    blank=True
+    ) 
+
+
 
     medecin = models.ForeignKey(
         settings.AUTH_USER_MODEL,
