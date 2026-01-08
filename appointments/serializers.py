@@ -11,11 +11,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 class RendezVousSerializer(serializers.ModelSerializer):
     medecin_name = serializers.SerializerMethodField()
-    
+
     class Meta:
         model = RendezVous
         fields = '__all__'
-        read_only_fields = ['statut', 'created_by', 'created_at', 'medecin_name']
+        read_only_fields = ['statut', 'created_by', 'created_at', 'medecin_name', 'patient']
 
     def get_medecin_name(self, obj):
         if obj.medecin:

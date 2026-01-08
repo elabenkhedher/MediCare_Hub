@@ -6,6 +6,13 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Patient, DossierMedical, DocumentMedical
 from .serializers import PatientSerializer, DossierMedicalSerializer, DocumentMedicalSerializer, PatientRegisterSerializer
 from .permissions import IsSecretaire, IsMedecin, IsPatient
+from rest_framework.permissions import BasePermission
+from django.views.decorators.csrf import csrf_exempt
+from django.utils.decorators import method_decorator
+
+class IsSecretaireOrMedecin(BasePermission):
+    def has_permission(self, request, view):
+        return request.user.is_authenticated and request.user.role in ['secretaire', 'medecin']
 from accounts.serializers import UserSerializer
 
 
@@ -19,17 +26,11 @@ class MedecinListView(generics.ListAPIView):
         return User.objects.filter(role='medecin')
 
 
+@method_decorator(csrf_exempt, name='dispatch')
 class PatientViewSet(viewsets.ModelViewSet):
-    queryset = Patient.objects.all()
+    queryset = Patient.objects.all().order_by('-date_creation')
     serializer_class = PatientSerializer
-    permission_classes = [IsAuthenticated]
-
-    def get_queryset(self):
-        # Allow both secretaire and medecin to access patient list
-        user = self.request.user
-        if user.is_authenticated and user.role in ['secretaire', 'medecin']:
-            return Patient.objects.all()
-        return Patient.objects.none()
+    permission_classes = [IsAuthenticated, IsSecretaireOrMedecin]
 
     def perform_create(self, serializer):
         patient = serializer.save()
