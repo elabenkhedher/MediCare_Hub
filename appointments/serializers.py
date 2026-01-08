@@ -11,6 +11,7 @@ class UserSerializer(serializers.ModelSerializer):
 
 class RendezVousSerializer(serializers.ModelSerializer):
     medecin_name = serializers.SerializerMethodField()
+    patient_name = serializers.SerializerMethodField()
 
     class Meta:
         model = RendezVous
