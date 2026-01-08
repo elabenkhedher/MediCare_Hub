@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Patient, DossierMedical, DocumentMedical
 from .serializers import PatientSerializer, DossierMedicalSerializer, DocumentMedicalSerializer, PatientRegisterSerializer
-from .permissions import IsSecretaire, IsMedecin, IsPatient
+from .permissions import IsSecretaire, IsMedecin, IsPatient, IsMedecinOrPatientReadOnly
 from rest_framework.permissions import BasePermission
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
@@ -89,7 +89,7 @@ class PatientRegisterView(generics.CreateAPIView):
 class MyPatientProfileView(generics.RetrieveUpdateAPIView):
     """Endpoint pour que le patient connecté puisse voir et modifier son propre profil"""
     serializer_class = PatientSerializer
-    permission_classes = [IsAuthenticated, IsPatient]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         # Trouver le patient lié à l'utilisateur connecté
@@ -98,20 +98,17 @@ class MyPatientProfileView(generics.RetrieveUpdateAPIView):
             # Si pas trouvé par user, chercher par nom d'utilisateur
             patient = Patient.objects.filter(nom=self.request.user.username).first()
             if not patient:
-                # Si toujours pas trouvé, créer un patient pour cet utilisateur
-                patient = Patient.objects.create(
-                    user=self.request.user,
-                    nom=self.request.user.username,
-                    email=self.request.user.email or "",
-                )
-                DossierMedical.objects.create(patient=patient)
+                # Si toujours pas trouvé, vérifier si c'est un utilisateur sans patient associé
+                # Retourner 404 pour ne pas révéler l'existence de patients
+                from django.http import Http404
+                raise Http404("Patient non trouvé")
         return patient
 
 
 class MyDossierMedicalView(generics.RetrieveUpdateAPIView):
     """Endpoint pour que le patient connecté puisse voir et modifier son dossier médical"""
     serializer_class = DossierMedicalSerializer
-    permission_classes = [IsAuthenticated, IsPatient]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         # Trouver le patient lié à l'utilisateur connecté

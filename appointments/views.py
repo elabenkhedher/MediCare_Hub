@@ -33,19 +33,37 @@ class RendezVousViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         """Save the appointment with the current user as creator"""
+        from patients.models import Patient
         user = self.request.user
         
-        # If patient is creating, auto-assign their patient profile
-        if user.role == 'patient':
-            from patients.models import Patient
+        # Check if patient_id is provided in the request data (for doctor/secretaire creating appointment)
+        patient_id = self.request.data.get('patient')
+        
+        patient = None
+        if patient_id:
+            # Use the patient_id from request (for doctor/secretaire)
             try:
-                patient = Patient.objects.get(nom=user.username)
-                serializer.save(created_by=user, patient=patient)
+                patient = Patient.objects.get(id=patient_id)
             except Patient.DoesNotExist:
-                # If no patient profile exists, just save with created_by
-                serializer.save(created_by=user)
-        else:
-            serializer.save(created_by=user)
+                pass
+        
+        # If patient is creating their own appointment, auto-assign their patient profile
+        if user.role == 'patient' and not patient:
+            try:
+                # Try to find by user relationship first
+                patient = Patient.objects.get(user=user)
+            except Patient.DoesNotExist:
+                try:
+                    # Fallback to nom matching
+                    patient = Patient.objects.get(nom=user.username)
+                except Patient.DoesNotExist:
+                    pass
+        
+        # If no patient found, raise an error
+        if not patient:
+            raise serializers.ValidationError({"patient": "Patient profile not found for the current user"})
+        
+        serializer.save(created_by=user, patient=patient)
 
     def create(self, request, *args, **kwargs):
         """Override create to handle validation errors properly"""

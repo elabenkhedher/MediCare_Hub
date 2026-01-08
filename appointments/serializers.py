@@ -15,12 +15,18 @@ class RendezVousSerializer(serializers.ModelSerializer):
     class Meta:
         model = RendezVous
         fields = '__all__'
-        read_only_fields = ['statut', 'created_by', 'created_at', 'medecin_name', 'patient']
+        read_only_fields = ['statut', 'created_by', 'created_at', 'medecin_name']
+
 
     def get_medecin_name(self, obj):
         if obj.medecin:
             return f"Dr. {obj.medecin.first_name or ''} {obj.medecin.last_name or obj.medecin.username}"
         return "Médecin non spécifié"
+
+    def get_patient_name(self, obj):
+        if obj.patient:
+            return f"{obj.patient.prenom or ''} {obj.patient.nom or ''}".strip()
+        return "Patient non spécifié"
 
     def validate(self, data):
         # Use .get() to avoid KeyError for partial updates
