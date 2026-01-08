@@ -8,6 +8,7 @@ from .views import (
     MyPatientProfileView,
     MyDossierMedicalView,
     AddDocumentView,
+    MedecinListView,
 )
 
 router = DefaultRouter()
@@ -20,6 +21,6 @@ urlpatterns = [
     path("patients/me/", MyPatientProfileView.as_view(), name="my-profile"),
     path("patients/my-dossier/", MyDossierMedicalView.as_view(), name="my-dossier"),
     path("patients/add-document/", AddDocumentView.as_view(), name="add-document"),
+    path("patients/medecins/", MedecinListView.as_view(), name="medecins-list"),
     path("", include(router.urls)),
 ]
-

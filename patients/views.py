@@ -4,8 +4,19 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import Patient, DossierMedical, DocumentMedical
-from .serializers import (PatientSerializer, DossierMedicalSerializer, DocumentMedicalSerializer, PatientRegisterSerializer)
+from .serializers import PatientSerializer, DossierMedicalSerializer, DocumentMedicalSerializer, PatientRegisterSerializer
 from .permissions import IsSecretaire, IsMedecin, IsPatient
+from accounts.serializers import UserSerializer
+
+
+class MedecinListView(generics.ListAPIView):
+    """Endpoint pour lister les médecins disponibles"""
+    serializer_class = UserSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        from accounts.models import User
+        return User.objects.filter(role='medecin')
 
 
 class PatientViewSet(viewsets.ModelViewSet):
