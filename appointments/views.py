@@ -12,24 +12,36 @@ class RendezVousViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        """Filter appointments based on user role"""
+        """Filter appointments based on user role and date parameter"""
         from patients.models import Patient
         user = self.request.user
+        queryset = RendezVous.objects.all()
+        
+        # Get date filter from query params
+        date_param = self.request.query_params.get('date')
+        
         if user.role == 'patient':
             # Patients see only their own appointments
             # Find the patient by matching nom with username
             try:
                 patient = Patient.objects.get(nom=user.username)
-                return RendezVous.objects.filter(patient=patient)
+                queryset = queryset.filter(patient=patient)
             except Patient.DoesNotExist:
                 return RendezVous.objects.none()
         elif user.role == 'medecin':
             # Doctors see appointments where they are the assigned doctor
-            return RendezVous.objects.filter(medecin=user)
+            queryset = queryset.filter(medecin=user)
         elif user.role == 'secretaire':
             # Secretaries see all appointments
-            return RendezVous.objects.all()
-        return RendezVous.objects.none()
+            pass
+        else:
+            return RendezVous.objects.none()
+        
+        # Apply date filter if provided
+        if date_param:
+            queryset = queryset.filter(date=date_param)
+        
+        return queryset.order_by('date', 'heure_debut')
 
     def perform_create(self, serializer):
         """Save the appointment with the current user as creator"""
@@ -90,3 +102,11 @@ class RendezVousViewSet(viewsets.ModelViewSet):
         ).values('heure_debut', 'heure_fin')
         
         return Response(list(appointments))
+
+    @action(detail=False, methods=['get'])
+    def by_creator(self, request):
+        """Get appointments created by the current user"""
+        user = request.user
+        appointments = RendezVous.objects.filter(created_by=user)
+        serializer = self.get_serializer(appointments, many=True)
+        return Response(serializer.data)

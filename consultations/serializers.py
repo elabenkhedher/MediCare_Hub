@@ -12,11 +12,15 @@ class ConsultationSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True
     )
+    
+    medecin = serializers.PrimaryKeyRelatedField(
+        read_only=True
+    )
 
     class Meta:
         model = Consultation
         fields = '__all__'
-        read_only_fields = ['id', 'created_at', 'is_archived']
+        read_only_fields = ['id', 'created_at', 'is_archived', 'medecin']
 
     def create(self, validated_data):
         consultation = super().create(validated_data)

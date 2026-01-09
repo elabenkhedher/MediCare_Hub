@@ -17,6 +17,10 @@ class ConsultationViewSet(viewsets.ModelViewSet):
             return Consultation.objects.filter(is_archived=False, medecin=user)
         return Consultation.objects.none()
 
+    def perform_create(self, serializer):
+        # Automatically set the medecin from the authenticated user
+        serializer.save(medecin=self.request.user)
+
     def perform_destroy(self, instance):
         # Interdit la suppression → on archive
         if instance.is_archived:
