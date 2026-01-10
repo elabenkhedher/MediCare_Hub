@@ -22,12 +22,15 @@ class RendezVousViewSet(viewsets.ModelViewSet):
         
         if user.role == 'patient':
             # Patients see only their own appointments
-            # Find the patient by matching nom with username
+            # Find the patient by user or by matching nom with username
             try:
-                patient = Patient.objects.get(nom=user.username)
-                queryset = queryset.filter(patient=patient)
+                patient = Patient.objects.get(user=user)
             except Patient.DoesNotExist:
-                return RendezVous.objects.none()
+                try:
+                    patient = Patient.objects.get(nom=user.username)
+                except Patient.DoesNotExist:
+                    return RendezVous.objects.none()
+            queryset = queryset.filter(patient=patient)
         elif user.role == 'medecin':
             # Doctors see appointments where they are the assigned doctor
             queryset = queryset.filter(medecin=user)

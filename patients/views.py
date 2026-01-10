@@ -46,7 +46,7 @@ class PatientViewSet(viewsets.ModelViewSet):
 class DossierMedicalViewSet(viewsets.ModelViewSet):
     queryset = DossierMedical.objects.all()
     serializer_class = DossierMedicalSerializer
-    permission_classes = [IsAuthenticated, IsSecretaire]
+    permission_classes = [IsAuthenticated, IsSecretaireOrMedecin]
 
 
 class DocumentMedicalViewSet(viewsets.ModelViewSet):
@@ -147,3 +147,37 @@ class AddDocumentView(generics.CreateAPIView):
             raise Http404("Patient non trouvé")
         dossier = patient.dossier
         serializer.save(dossier_medical=dossier)
+
+
+class PatientDossierView(generics.RetrieveAPIView):
+    """Endpoint pour récupérer le dossier médical d'un patient spécifique"""
+    serializer_class = DossierMedicalSerializer
+    permission_classes = [IsAuthenticated, IsSecretaireOrMedecin]
+
+    def get_object(self):
+        patient_id = self.kwargs['patient_id']
+        try:
+            patient = Patient.objects.get(id=patient_id)
+            return patient.dossier
+        except Patient.DoesNotExist:
+            from django.http import Http404
+            raise Http404("Patient non trouvé")
+        except DossierMedical.DoesNotExist:
+            from django.http import Http404
+            raise Http404("Dossier médical non trouvé")
+
+
+class CreatePatientDossierView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated, IsSecretaireOrMedecin]
+
+    def post(self, request, patient_id):
+        try:
+            patient = Patient.objects.get(id=patient_id)
+            try:
+                dossier = patient.dossier
+                return Response({'dossier': {'id': dossier.id}}, status=200)
+            except DossierMedical.DoesNotExist:
+                dossier = DossierMedical.objects.create(patient=patient)
+                return Response({'dossier': {'id': dossier.id}}, status=201)
+        except Patient.DoesNotExist:
+            return Response({'detail': 'Patient non trouvé'}, status=404)

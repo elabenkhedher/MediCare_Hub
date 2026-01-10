@@ -9,6 +9,8 @@ from .views import (
     MyDossierMedicalView,
     AddDocumentView,
     MedecinListView,
+    PatientDossierView,
+    CreatePatientDossierView,
 )
 
 router = DefaultRouter()
@@ -47,5 +49,7 @@ urlpatterns = [
     path("patients/add-document", AddDocumentView.as_view(), name="add-document-no-slash"),
     path("patients/medecins/", MedecinListView.as_view(), name="medecins-list"),
     path("patients/medecins", MedecinListView.as_view(), name="medecins-list-no-slash"),
+    path("patients/<int:patient_id>/dossier/", PatientDossierView.as_view(), name="patient-dossier"),
+    path("patients/create-dossier/<int:patient_id>/", CreatePatientDossierView.as_view(), name="create-patient-dossier"),
     path("", include(router.urls)),
 ]
