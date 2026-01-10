@@ -93,17 +93,17 @@ class RendezVousViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['get'])
     def by_doctor_date(self, request):
         """Get appointments for a specific doctor on a specific date"""
-        medecin_id = request.query_params.get('medecin_id')
+        medecin_id = request.query_params.get('medecin') or request.query_params.get('medecin_id')
         date = request.query_params.get('date')
-        
+
         if not medecin_id or not date:
-            return Response({'error': 'medecin_id and date are required'}, status=400)
-        
+            return Response({'error': 'medecin and date are required'}, status=400)
+
         appointments = RendezVous.objects.filter(
             medecin_id=medecin_id,
             date=date
         ).values('heure_debut', 'heure_fin')
-        
+
         return Response(list(appointments))
 
     @action(detail=False, methods=['get'])
@@ -113,3 +113,4 @@ class RendezVousViewSet(viewsets.ModelViewSet):
         appointments = RendezVous.objects.filter(created_by=user)
         serializer = self.get_serializer(appointments, many=True)
         return Response(serializer.data)
+
